@@ -27,6 +27,10 @@ on:
   repository_dispatch:
     types: [video-processing-request]
 
+# Limit permissions for security
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: '20'
 

@@ -35,6 +35,10 @@ on:
   repository_dispatch:
     types: [payment-request, royalty-calculation]
 
+# Limit permissions for security
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: '20'
 

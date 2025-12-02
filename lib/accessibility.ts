@@ -358,7 +358,8 @@ export function connectLabelToInput(
   input: HTMLInputElement
 ): void {
   if (!input.id) {
-    input.id = `input-${Math.random().toString(36).substr(2, 9)}`
+    // Use crypto.randomUUID() for better collision resistance
+    input.id = `input-${typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)}`
   }
   label.setAttribute("for", input.id)
 }
