@@ -102,10 +102,15 @@ export function validateVideoInput(metadata: VideoMetadata): ValidationResult {
   }
 
   // Check codec
-  if (!SUPPORTED_CODECS.includes(metadata.codec.toLowerCase())) {
+  if (metadata.codec && !SUPPORTED_CODECS.includes(metadata.codec.toLowerCase())) {
     errors.push({
       code: 'UNSUPPORTED_CODEC',
       message: `Codec ${metadata.codec} is not supported`,
+    });
+  } else if (!metadata.codec) {
+    errors.push({
+      code: 'MISSING_CODEC',
+      message: 'Video codec information is missing',
     });
   }
 

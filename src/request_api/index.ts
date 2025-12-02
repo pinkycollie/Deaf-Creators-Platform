@@ -63,10 +63,21 @@ interface ValidationResult {
   errors: string[];
 }
 
+/** Elasticsearch query structure */
+export interface ElasticsearchQuery {
+  query: {
+    bool: {
+      must: object[];
+      filter: object[];
+    };
+  };
+  size: number;
+}
+
 /**
  * Build Elasticsearch query from filters
  */
-export function buildSearchQuery(request: MatchRequest): object {
+export function buildSearchQuery(request: MatchRequest): ElasticsearchQuery {
   const must: object[] = [];
   const filter: object[] = [];
 

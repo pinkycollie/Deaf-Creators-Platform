@@ -118,11 +118,17 @@ export function buildFFmpegArgs(
   ];
 
   if (output.format === 'hls') {
+    // Extract base path by removing .m3u8 extension (case-insensitive)
+    const basePath = output.outputPath.replace(/\.m3u8$/i, '');
+    const segmentFilename = basePath !== output.outputPath 
+      ? `${basePath}_%03d.ts`
+      : `${output.outputPath}_%03d.ts`;
+    
     args.push(
       '-f', 'hls',
       '-hls_time', '6',
       '-hls_playlist_type', 'vod',
-      '-hls_segment_filename', `${output.outputPath.replace('.m3u8', '')}_%03d.ts`
+      '-hls_segment_filename', segmentFilename
     );
   }
 

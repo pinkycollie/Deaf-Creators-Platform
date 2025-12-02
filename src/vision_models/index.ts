@@ -86,15 +86,22 @@ export interface QualityAnalysisResult {
   passed: boolean;
 }
 
+// Quality thresholds for overall quality calculation
+const QUALITY_THRESHOLD_PROFESSIONAL = 0.9;
+const QUALITY_THRESHOLD_HIGH = 0.7;
+const QUALITY_THRESHOLD_MEDIUM = 0.5;
+const RESOLUTION_THRESHOLD_PROFESSIONAL = 1080;
+const RESOLUTION_THRESHOLD_HIGH = 720;
+
 /**
  * Calculate overall quality score from individual metrics
  */
 export function calculateOverallQuality(metrics: QualityMetrics): QualityMetrics['overallQuality'] {
   const avgScore = (metrics.lightingScore + metrics.stabilityScore + metrics.focusScore) / 3;
 
-  if (avgScore >= 0.9 && metrics.resolution.height >= 1080) return 'professional';
-  if (avgScore >= 0.7 && metrics.resolution.height >= 720) return 'high';
-  if (avgScore >= 0.5) return 'medium';
+  if (avgScore >= QUALITY_THRESHOLD_PROFESSIONAL && metrics.resolution.height >= RESOLUTION_THRESHOLD_PROFESSIONAL) return 'professional';
+  if (avgScore >= QUALITY_THRESHOLD_HIGH && metrics.resolution.height >= RESOLUTION_THRESHOLD_HIGH) return 'high';
+  if (avgScore >= QUALITY_THRESHOLD_MEDIUM) return 'medium';
   return 'low';
 }
 

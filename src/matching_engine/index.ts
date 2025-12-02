@@ -96,6 +96,10 @@ export function calculateAccessibilityScore(
   return score;
 }
 
+// Recency scoring constants
+const RECENCY_FULL_SCORE_DAYS = 7; // Content less than this many days gets full score
+const RECENCY_DECAY_COEFFICIENT = 0.3; // Controls how quickly recency score decays
+
 /**
  * Calculate recency score (newer content scores higher)
  */
@@ -103,8 +107,8 @@ export function calculateRecencyScore(createdAt: Date): number {
   const now = new Date();
   const ageInDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
 
-  // Content less than 7 days old gets full score
+  // Content less than RECENCY_FULL_SCORE_DAYS old gets full score
   // Score decreases logarithmically
-  if (ageInDays <= 7) return 1;
-  return Math.max(0, 1 - Math.log10(ageInDays / 7) * 0.3);
+  if (ageInDays <= RECENCY_FULL_SCORE_DAYS) return 1;
+  return Math.max(0, 1 - Math.log10(ageInDays / RECENCY_FULL_SCORE_DAYS) * RECENCY_DECAY_COEFFICIENT);
 }
