@@ -47,6 +47,20 @@ This document summarizes the complete deployment and database stack implementati
   - Deployment version info
   - Edge runtime enabled
 
+### 4.5. Cost Estimator Tool
+- **Files**: `scripts/pinksync-estimator.js`, `components/cost-estimator.tsx`, `docs/COST_ESTIMATOR.md`
+- **Purpose**: Interactive cost benchmark with creator compensation splits
+- **Features**:
+  - Platform cost calculation (Vercel, Neon, PinkSync API, Stripe, Cloudflare R2)
+  - Tier-based creator compensation (Contractor → Regular → Agency)
+  - Suggested split compensation with benefits packages
+  - Growth incentives and expense offset strategies
+  - Independent contractor to agency progression model
+  - CLI and web-based interfaces
+- **Usage**: 
+  - CLI: `npm run estimate` or `node scripts/pinksync-estimator.js --example`
+  - Web: Import `<CostEstimator />` component in dashboard
+
 ### 5. Enhanced Middleware
 - **File**: `middleware.ts` (updated)
 - **Purpose**: Security and request handling

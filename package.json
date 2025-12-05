@@ -6,7 +6,9 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
-    "start": "next start"
+    "start": "next start",
+    "estimate": "node scripts/pinksync-estimator.js --example",
+    "estimate:interactive": "node scripts/pinksync-estimator.js"
   },
   "dependencies": {
     "@auth/core": "latest",
