@@ -14,7 +14,7 @@
     "@aws-sdk/client-secrets-manager": "latest",
     "@aws-sdk/s3-request-presigner": "latest",
     "@hookform/resolvers": "^3.10.0",
-    "@neondatabase/serverless": "^0.9.0",
+    "@neondatabase/serverless": "^0.9.5",
     "@next-auth/supabase-adapter": "latest",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
