@@ -1,4 +1,4 @@
-# V0 Deaf Creator Platform - Multi-Tenants
+#Deaf Creator Platform - Multi-Tenants
 
 A comprehensive video processing platform designed specifically for Deaf creators, featuring multi-channel video processing, creator dispatch, video request matching, and AI-powered video vision models.
 
