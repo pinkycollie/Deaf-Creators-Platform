@@ -29,27 +29,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from database
-    const userResult = await query(
+    const userResult = await query<any>(
       `SELECT id, tenant_id, email, full_name FROM users WHERE email = $1`,
       [session.user.email]
     )
 
-    if (userResult.rows.length === 0) {
+    if (userResult.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const user = userResult.rows[0]
+    const user = userResult[0]
 
     // Check if user already has a Stripe customer ID
     let stripeCustomerId: string
-    const subscriptionResult = await query(
+    const subscriptionResult = await query<any>(
       `SELECT stripe_customer_id FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
       [user.id]
     )
 
-    if (subscriptionResult.rows.length > 0 && subscriptionResult.rows[0].stripe_customer_id) {
+    if (subscriptionResult.length > 0 && subscriptionResult[0].stripe_customer_id) {
       // Use existing customer ID
-      stripeCustomerId = subscriptionResult.rows[0].stripe_customer_id
+      stripeCustomerId = subscriptionResult[0].stripe_customer_id
 
       // Verify customer still exists in Stripe
       const customer = await getCustomer(stripeCustomerId)

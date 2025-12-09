@@ -20,19 +20,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database
-    const userResult = await query(
+    const userResult = await query<any>(
       `SELECT id FROM users WHERE email = $1`,
       [session.user.email]
     )
 
-    if (userResult.rows.length === 0) {
+    if (userResult.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const userId = userResult.rows[0].id
+    const userId = userResult[0].id
 
     // Get subscription from database
-    const subscriptionResult = await query(
+    const subscriptionResult = await query<any>(
       `SELECT 
         stripe_subscription_id, 
         stripe_customer_id,
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       [userId]
     )
 
-    if (subscriptionResult.rows.length === 0) {
+    if (subscriptionResult.length === 0) {
       // No subscription found, return free tier
       const freeTier = getSubscriptionTier('free')
       return NextResponse.json({
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const dbSubscription = subscriptionResult.rows[0]
+    const dbSubscription = subscriptionResult[0]
 
     // If there's a Stripe subscription ID, get fresh data from Stripe
     let stripeSubscription = null

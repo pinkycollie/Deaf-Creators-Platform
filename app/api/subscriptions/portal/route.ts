@@ -29,19 +29,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from database
-    const userResult = await query(
+    const userResult = await query<any>(
       `SELECT id FROM users WHERE email = $1`,
       [session.user.email]
     )
 
-    if (userResult.rows.length === 0) {
+    if (userResult.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const userId = userResult.rows[0].id
+    const userId = userResult[0].id
 
     // Get Stripe customer ID
-    const subscriptionResult = await query(
+    const subscriptionResult = await query<any>(
       `SELECT stripe_customer_id FROM subscriptions 
        WHERE user_id = $1 
        ORDER BY created_at DESC 
@@ -49,14 +49,14 @@ export async function POST(request: NextRequest) {
       [userId]
     )
 
-    if (subscriptionResult.rows.length === 0 || !subscriptionResult.rows[0].stripe_customer_id) {
+    if (subscriptionResult.length === 0 || !subscriptionResult[0].stripe_customer_id) {
       return NextResponse.json(
         { error: 'No subscription found. Please subscribe first.' },
         { status: 404 }
       )
     }
 
-    const { stripe_customer_id } = subscriptionResult.rows[0]
+    const { stripe_customer_id } = subscriptionResult[0]
 
     // Create portal session
     const portalSession = await createPortalSession({

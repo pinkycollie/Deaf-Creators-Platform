@@ -57,13 +57,13 @@ export async function POST(request: NextRequest) {
         const planId = tierInfo?.tierId || "free"
 
         // Find user by Stripe customer ID
-        const userResult = await query(
+        const userResult = await query<any>(
           `SELECT user_id, tenant_id FROM subscriptions WHERE stripe_customer_id = $1 LIMIT 1`,
           [customerId]
         )
 
-        if (userResult.rows.length > 0) {
-          const { user_id, tenant_id } = userResult.rows[0]
+        if (userResult.length > 0) {
+          const { user_id, tenant_id } = userResult[0]
 
           // Update subscription in database
           await query(
@@ -131,19 +131,19 @@ export async function POST(request: NextRequest) {
         )
 
         // Update tenant to free tier
-        const tenantResult = await query(
+        const tenantResult = await query<any>(
           `SELECT tenant_id FROM subscriptions WHERE stripe_subscription_id = $1`,
           [subscription.id]
         )
 
-        if (tenantResult.rows.length > 0) {
+        if (tenantResult.length > 0) {
           await query(
             `UPDATE tenants SET 
               subscription_tier = $1,
               subscription_status = $2,
               updated_at = NOW()
              WHERE id = $3`,
-            ["free", "canceled", tenantResult.rows[0].tenant_id]
+            ["free", "canceled", tenantResult[0].tenant_id]
           )
         }
 

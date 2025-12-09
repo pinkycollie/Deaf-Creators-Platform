@@ -22,30 +22,30 @@ export async function POST(request: NextRequest) {
     const { action = 'cancel' } = body // 'cancel' or 'resume'
 
     // Get user from database
-    const userResult = await query(
+    const userResult = await query<any>(
       `SELECT id FROM users WHERE email = $1`,
       [session.user.email]
     )
 
-    if (userResult.rows.length === 0) {
+    if (userResult.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const userId = userResult.rows[0].id
+    const userId = userResult[0].id
 
     // Get active subscription
-    const subscriptionResult = await query(
+    const subscriptionResult = await query<any>(
       `SELECT stripe_subscription_id, status FROM subscriptions 
        WHERE user_id = $1 AND status IN ('active', 'trialing', 'past_due')
        ORDER BY created_at DESC LIMIT 1`,
       [userId]
     )
 
-    if (subscriptionResult.rows.length === 0) {
+    if (subscriptionResult.length === 0) {
       return NextResponse.json({ error: 'No active subscription found' }, { status: 404 })
     }
 
-    const { stripe_subscription_id } = subscriptionResult.rows[0]
+    const { stripe_subscription_id } = subscriptionResult[0]
 
     let updatedSubscription
     if (action === 'resume') {
