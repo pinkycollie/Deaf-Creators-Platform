@@ -41,10 +41,27 @@ export function PricingTiers({ currentTier = 'free', onSelectPlan }: PricingTier
   }
 
   const getPriceId = (tier: SubscriptionTier) => {
+    if (!tier.stripePriceIds) return ''
     return billingInterval === 'monthly'
       ? tier.stripePriceIds.monthly
       : tier.stripePriceIds.yearly
   }
+
+  // Calculate average savings percentage across paid tiers
+  const calculateSavings = () => {
+    const paidTiers = ALL_TIERS.filter(t => t.price.monthly > 0)
+    if (paidTiers.length === 0) return 0
+    
+    const avgSavings = paidTiers.reduce((sum, tier) => {
+      const monthlyTotal = tier.price.monthly * 12
+      const yearlySavings = ((monthlyTotal - tier.price.yearly) / monthlyTotal) * 100
+      return sum + yearlySavings
+    }, 0) / paidTiers.length
+    
+    return Math.round(avgSavings)
+  }
+
+  const savingsPercent = calculateSavings()
 
   return (
     <div className="w-full space-y-8">
@@ -74,7 +91,9 @@ export function PricingTiers({ currentTier = 'free', onSelectPlan }: PricingTier
             billingInterval === 'yearly' ? 'text-foreground' : 'text-muted-foreground'
           }`}
         >
-          Yearly <Badge className="ml-1" variant="secondary">Save 17%</Badge>
+          Yearly {savingsPercent > 0 && (
+            <Badge className="ml-1" variant="secondary">Save {savingsPercent}%</Badge>
+          )}
         </span>
       </div>
 

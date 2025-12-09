@@ -115,6 +115,14 @@ export async function POST(request: NextRequest) {
             planId,
             status: subscription.status,
           })
+        } else {
+          // User not found - log warning as this might be a new customer
+          // that hasn't completed checkout flow yet
+          await logInfo("Subscription event received for unknown customer", {
+            customerId,
+            subscriptionId: subscription.id,
+            note: "Customer may not have completed initial setup"
+          })
         }
         break
       }
@@ -122,28 +130,24 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription
 
-        // Update subscription status to canceled
-        await query(
+        // Update subscription status to canceled and get tenant_id in same query
+        const result = await query<any>(
           `UPDATE subscriptions 
            SET status = $1, plan_id = $2, updated_at = NOW()
-           WHERE stripe_subscription_id = $3`,
+           WHERE stripe_subscription_id = $3
+           RETURNING tenant_id`,
           ["canceled", "free", subscription.id]
         )
 
-        // Update tenant to free tier
-        const tenantResult = await query<any>(
-          `SELECT tenant_id FROM subscriptions WHERE stripe_subscription_id = $1`,
-          [subscription.id]
-        )
-
-        if (tenantResult.length > 0) {
+        // Update tenant to free tier if subscription was found
+        if (result.length > 0) {
           await query(
             `UPDATE tenants SET 
               subscription_tier = $1,
               subscription_status = $2,
               updated_at = NOW()
              WHERE id = $3`,
-            ["free", "canceled", tenantResult[0].tenant_id]
+            ["free", "canceled", result[0].tenant_id]
           )
         }
 

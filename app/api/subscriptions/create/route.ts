@@ -79,9 +79,12 @@ export async function POST(request: NextRequest) {
 
       // Update database with customer ID
       await query(
-        `INSERT INTO subscriptions (user_id, tenant_id, stripe_customer_id, plan_id, status)
-         VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (user_id) DO UPDATE SET stripe_customer_id = $3`,
+        `INSERT INTO subscriptions (user_id, tenant_id, stripe_customer_id, plan_id, status, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())
+         ON CONFLICT (user_id) DO UPDATE SET 
+           stripe_customer_id = EXCLUDED.stripe_customer_id,
+           tenant_id = EXCLUDED.tenant_id,
+           updated_at = NOW()`,
         [user.id, user.tenant_id, stripeCustomerId, 'free', 'inactive']
       )
     }

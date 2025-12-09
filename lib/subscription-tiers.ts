@@ -18,7 +18,7 @@ export interface SubscriptionTier {
     monthly: number
     yearly: number
   }
-  stripePriceIds: {
+  stripePriceIds?: {
     monthly: string
     yearly: string
   }
@@ -128,10 +128,7 @@ export const FREE_TIER: SubscriptionTier = {
     monthly: 0,
     yearly: 0,
   },
-  stripePriceIds: {
-    monthly: '',
-    yearly: '',
-  },
+  // Free tier has no Stripe price IDs
   features: [
     { name: '1 project', description: 'Create 1 project', included: true },
     { name: '1 GB storage', description: 'Store up to 1GB of content', included: true },
@@ -162,7 +159,7 @@ export function getSubscriptionTier(tierId: string): SubscriptionTier | undefine
  */
 export function getTierByPriceId(priceId: string): SubscriptionTier | undefined {
   return ALL_TIERS.find(
-    (tier) => tier.stripePriceIds.monthly === priceId || tier.stripePriceIds.yearly === priceId
+    (tier) => tier.stripePriceIds?.monthly === priceId || tier.stripePriceIds?.yearly === priceId
   )
 }
 
@@ -182,7 +179,7 @@ export function isFeatureAvailable(tierId: string, featureName: string): boolean
  */
 export function getBillingInterval(priceId: string): 'monthly' | 'yearly' | undefined {
   const tier = getTierByPriceId(priceId)
-  if (!tier) return undefined
+  if (!tier || !tier.stripePriceIds) return undefined
   
   if (tier.stripePriceIds.monthly === priceId) return 'monthly'
   if (tier.stripePriceIds.yearly === priceId) return 'yearly'
