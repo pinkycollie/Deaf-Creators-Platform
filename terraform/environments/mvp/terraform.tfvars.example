@@ -1,0 +1,65 @@
+# MVP / Development Deployment Configuration
+# Minimal configuration for development and testing
+
+environment = "mvp"
+domain      = "mvp.creators.pinksync.io"
+git_repository = "pinkycollie/v0-deaf-creator-platform-multi-tenants"
+
+# AWS Configuration
+aws_region = "us-east-1"
+
+# Cloudflare Zero Trust Access (disabled for MVP)
+enable_zero_trust = false
+
+# Backend Configuration
+backend_type = "lambda"
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["us-east-1a"]
+
+# Database Configuration
+database_type = "neon"
+backup_retention_days = 7
+
+# Security Configuration (minimal for MVP)
+enable_waf = false
+enable_ddos_protection = true  # Always on with Cloudflare
+enable_bot_management = false
+bot_fight_mode = "off"
+
+waf_rule_sets = []
+waf_rate_limits = {}
+firewall_rules = []
+
+# Compliance Configuration (none for MVP)
+compliance_standards = []
+log_retention_days = 7
+
+# Storage Configuration
+storage_lifecycle_rules = [
+  {
+    id              = "expire-temp-uploads"
+    enabled         = true
+    prefix          = "temp/"
+    expiration_days = 1
+  }
+]
+
+storage_cors_rules = [
+  {
+    allowed_origins = ["https://mvp.creators.pinksync.io", "http://localhost:3000"]
+    allowed_methods = ["GET", "PUT", "POST", "DELETE"]
+    allowed_headers = ["*"]
+    max_age_seconds = 3600
+  }
+]
+
+# Monitoring Configuration
+enable_cloudwatch = false
+enable_cloudflare_analytics = true
+alert_email = "dev@pinksync.io"
+metrics_retention_days = 7
+
+# Frontend Environment Variables
+frontend_env_vars = {
+  NEXT_PUBLIC_APP_ENV = "development"
+}
