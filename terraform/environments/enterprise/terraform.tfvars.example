@@ -1,0 +1,215 @@
+# Enterprise Deployment Configuration
+# Full Zero Trust Access, comprehensive security, and multi-compliance
+
+environment = "enterprise"
+domain      = "enterprise.creators.pinksync.io"
+git_repository = "pinkycollie/v0-deaf-creator-platform-multi-tenants"
+
+# AWS Configuration
+aws_region = "us-east-1"
+data_residency_region = "us-east-1"
+
+# Cloudflare Zero Trust Access
+enable_zero_trust = true
+
+identity_providers = {
+  azure = {
+    name = "Azure Active Directory"
+    type = "azure"
+    config = {
+      client_id     = "your-azure-client-id"
+      client_secret = "your-azure-client-secret"
+      domain        = "yourcompany.onmicrosoft.com"
+    }
+  }
+  
+  okta = {
+    name = "Okta SSO"
+    type = "okta"
+    config = {
+      okta_account  = "yourcompany.okta.com"
+      client_id     = "your-okta-client-id"
+      client_secret = "your-okta-client-secret"
+    }
+  }
+}
+
+zero_trust_applications = {
+  frontend = {
+    name             = "Creator Platform"
+    domain           = "app.enterprise.creators.pinksync.io"
+    type             = "self_hosted"
+    session_duration = "24h"
+    allowed_idps     = ["azure", "okta"]
+    auto_redirect    = true
+  }
+  
+  api = {
+    name             = "Backend API"
+    domain           = "api.enterprise.creators.pinksync.io"
+    type             = "self_hosted"
+    session_duration = "12h"
+    allowed_idps     = ["azure", "okta"]
+    auto_redirect    = false
+  }
+  
+  admin = {
+    name             = "Admin Panel"
+    domain           = "admin.enterprise.creators.pinksync.io"
+    type             = "self_hosted"
+    session_duration = "8h"
+    allowed_idps     = ["azure", "okta"]
+    auto_redirect    = true
+  }
+  
+  storage = {
+    name             = "Storage Access"
+    domain           = "uploads.enterprise.creators.pinksync.io"
+    type             = "self_hosted"
+    session_duration = "1h"
+    allowed_idps     = ["azure", "okta"]
+    auto_redirect    = false
+  }
+}
+
+access_policies = {
+  admin_only = {
+    name        = "Admin Access - MFA Required"
+    application = "admin"
+    decision    = "allow"
+    precedence  = 1
+    include = [
+      {
+        email_domain = "pinksync.io"
+      }
+    ]
+    require = [
+      {
+        auth_method = "mfa"
+      }
+    ]
+    exclude = []
+  }
+  
+  developer_api = {
+    name        = "Developer API Access"
+    application = "api"
+    decision    = "allow"
+    precedence  = 2
+    include = [
+      {
+        email_domain = "pinksync.io"
+      }
+    ]
+    require = []
+    exclude = []
+  }
+  
+  user_frontend = {
+    name        = "Authenticated User Access"
+    application = "frontend"
+    decision    = "allow"
+    precedence  = 3
+    include = [
+      {
+        email_domain = "pinksync.io"
+      }
+    ]
+    require = []
+    exclude = []
+  }
+}
+
+# Backend Configuration
+backend_type = "ec2"
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+
+# Database Configuration
+database_type = "rds"
+backup_retention_days = 90
+
+# Security Configuration
+enable_waf = true
+enable_ddos_protection = true
+enable_bot_management = true
+bot_fight_mode = "on"
+
+waf_rule_sets = [
+  "OWASP_ModSecurity_Core_Rule_Set",
+  "Cloudflare_Managed_Ruleset",
+  "Cloudflare_OWASP_Core_Ruleset"
+]
+
+waf_rate_limits = {
+  api_rate_limit = {
+    threshold   = 100
+    period      = 60
+    action      = "challenge"
+    description = "Rate limit for API endpoints"
+  }
+  
+  login_rate_limit = {
+    threshold   = 5
+    period      = 300
+    action      = "block"
+    description = "Login attempt rate limit"
+  }
+}
+
+firewall_rules = [
+  {
+    description = "Block known malicious IPs"
+    expression  = "(ip.geoip.asnum in {12345 67890})"
+    action      = "block"
+    priority    = 1
+  },
+  {
+    description = "Challenge suspicious user agents"
+    expression  = "(http.user_agent contains \"bot\" and not cf.bot_management.verified_bot)"
+    action      = "challenge"
+    priority    = 2
+  }
+]
+
+# Compliance Configuration
+compliance_standards = ["HIPAA", "GDPR", "SOC2"]
+log_retention_days = 365
+enable_mfa_requirement = true
+
+# Storage Configuration
+storage_lifecycle_rules = [
+  {
+    id              = "expire-temp-uploads"
+    enabled         = true
+    prefix          = "temp/"
+    expiration_days = 7
+  },
+  {
+    id              = "archive-old-content"
+    enabled         = true
+    prefix          = "archive/"
+    expiration_days = 2555  # 7 years for GDPR
+  }
+]
+
+storage_cors_rules = [
+  {
+    allowed_origins = ["https://app.enterprise.creators.pinksync.io"]
+    allowed_methods = ["GET", "PUT", "POST", "DELETE"]
+    allowed_headers = ["*"]
+    max_age_seconds = 3600
+  }
+]
+
+# Monitoring Configuration
+enable_cloudwatch = true
+enable_cloudflare_analytics = true
+alert_email = "alerts@pinksync.io"
+metrics_retention_days = 90
+
+# Frontend Environment Variables
+frontend_env_vars = {
+  NEXT_PUBLIC_APP_ENV = "enterprise"
+  NEXT_PUBLIC_ZERO_TRUST_ENABLED = "true"
+}
