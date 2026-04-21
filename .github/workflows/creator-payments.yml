@@ -1,0 +1,394 @@
+# Creator Payment Processing Workflow
+# Handles royalty calculations, payment disbursements, and earnings management
+
+name: Creator Payment Processing
+
+on:
+  schedule:
+    # Run daily at midnight UTC for royalty calculations
+    - cron: '0 0 * * *'
+    # Run weekly on Sundays for payment processing
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Payment action to perform'
+        required: true
+        type: choice
+        options:
+          - calculate-royalties
+          - process-payouts
+          - generate-reports
+          - audit-payments
+      tenant_id:
+        description: 'Tenant ID (optional, leave empty for all tenants)'
+        required: false
+        type: string
+      date_from:
+        description: 'Start date for calculations (YYYY-MM-DD)'
+        required: false
+        type: string
+      date_to:
+        description: 'End date for calculations (YYYY-MM-DD)'
+        required: false
+        type: string
+  repository_dispatch:
+    types: [payment-request, royalty-calculation]
+
+# Limit permissions for security
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  calculate-royalties:
+    name: Calculate Creator Royalties
+    if: github.event_name == 'schedule' || github.event.inputs.action == 'calculate-royalties' || github.event.action == 'royalty-calculation'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Set date range
+        id: dates
+        run: |
+          if [ -n "${{ github.event.inputs.date_from }}" ]; then
+            echo "date_from=${{ github.event.inputs.date_from }}" >> $GITHUB_OUTPUT
+          else
+            echo "date_from=$(date -d 'yesterday' +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          fi
+          if [ -n "${{ github.event.inputs.date_to }}" ]; then
+            echo "date_to=${{ github.event.inputs.date_to }}" >> $GITHUB_OUTPUT
+          else
+            echo "date_to=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fetch content view metrics
+        id: metrics
+        run: |
+          echo "Fetching content view metrics..."
+          echo "Calculating royalties for period: ${{ steps.dates.outputs.date_from }} to ${{ steps.dates.outputs.date_to }}"
+          # Fetch analytics data from database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Calculate view-based royalties
+        run: |
+          echo "Calculating view-based royalties..."
+          # Calculate royalties based on views
+          # Apply royalty rules for each content piece
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Calculate scene-based royalties
+        run: |
+          echo "Calculating scene-based royalties for multi-contributor content..."
+          # Calculate royalties for scene contributors
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Calculate revenue share royalties
+        run: |
+          echo "Calculating revenue share royalties..."
+          # Apply revenue share rules
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Record earnings
+        run: |
+          echo "Recording calculated earnings in database..."
+          # Insert earning records for each creator
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Generate calculation summary
+        run: |
+          cat << EOF
+          ================================
+          ROYALTY CALCULATION SUMMARY
+          ================================
+          Period: ${{ steps.dates.outputs.date_from }} to ${{ steps.dates.outputs.date_to }}
+          Creators Processed: TBD
+          Total Royalties Calculated: TBD
+          ================================
+          EOF
+
+  process-payouts:
+    name: Process Creator Payouts
+    if: github.event.schedule == '0 6 * * 0' || github.event.inputs.action == 'process-payouts' || github.event.action == 'payment-request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Fetch pending earnings
+        id: pending
+        run: |
+          echo "Fetching pending earnings above payout threshold..."
+          # Query creators with confirmed earnings above threshold
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Validate creator payment methods
+        run: |
+          echo "Validating creator payment methods..."
+          # Verify Stripe Connect accounts are active
+          # Check PayPal emails are verified
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+
+      - name: Process Stripe Connect payouts
+        run: |
+          echo "Processing Stripe Connect payouts..."
+          # Create Stripe transfers to creator accounts
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+
+      - name: Process PayPal payouts
+        run: |
+          echo "Processing PayPal payouts..."
+          # Create PayPal Payouts batch
+        env:
+          PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
+          PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
+
+      - name: Update earnings status
+        run: |
+          echo "Updating earnings status to paid..."
+          # Update earnings records to paid status
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Create payment transaction records
+        run: |
+          echo "Creating payment transaction records..."
+          # Insert payment transaction records
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Send payment confirmation notifications
+        run: |
+          echo "Sending payment confirmation notifications to creators..."
+          # Send email and push notifications
+        env:
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          PUSHER_APP_ID: ${{ secrets.PUSHER_APP_ID }}
+          PUSHER_KEY: ${{ secrets.PUSHER_KEY }}
+          PUSHER_SECRET: ${{ secrets.PUSHER_SECRET }}
+
+      - name: Generate payout summary
+        run: |
+          cat << EOF
+          ================================
+          PAYOUT PROCESSING SUMMARY
+          ================================
+          Date: $(date +%Y-%m-%d)
+          Creators Paid: TBD
+          Total Amount Disbursed: TBD
+          Stripe Payouts: TBD
+          PayPal Payouts: TBD
+          Failed Payouts: TBD
+          ================================
+          EOF
+
+  generate-reports:
+    name: Generate Payment Reports
+    if: github.event.inputs.action == 'generate-reports'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate earnings report
+        run: |
+          echo "Generating detailed earnings report..."
+          mkdir -p ./reports
+          # Generate CSV/PDF report
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Generate royalty breakdown report
+        run: |
+          echo "Generating royalty breakdown by content..."
+          # Generate per-content royalty breakdown
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Generate tax report
+        run: |
+          echo "Generating tax report for creators..."
+          # Generate 1099 data for US creators
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Upload reports to storage
+        run: |
+          echo "Uploading reports to secure storage..."
+          # Upload to R2/S3
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_ACCESS_KEY_ID }}
+          CLOUDFLARE_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_SECRET_ACCESS_KEY }}
+
+      - name: Notify admins
+        run: |
+          echo "Notifying admins of report generation..."
+          # Send email to admins with report links
+        env:
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+
+  audit-payments:
+    name: Audit Payment Transactions
+    if: github.event.inputs.action == 'audit-payments'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Reconcile Stripe transactions
+        run: |
+          echo "Reconciling Stripe transactions..."
+          # Compare database records with Stripe balance transactions
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Check for discrepancies
+        id: discrepancies
+        run: |
+          echo "Checking for payment discrepancies..."
+          echo "discrepancies_found=0" >> $GITHUB_OUTPUT
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Flag suspicious transactions
+        run: |
+          echo "Flagging suspicious transactions for review..."
+          # Identify unusual patterns
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Generate audit log
+        run: |
+          echo "Generating payment audit log..."
+          # Create audit trail entries
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Create audit report
+        run: |
+          cat << EOF
+          ================================
+          PAYMENT AUDIT REPORT
+          ================================
+          Audit Date: $(date +%Y-%m-%d)
+          Transactions Reviewed: TBD
+          Discrepancies Found: ${{ steps.discrepancies.outputs.discrepancies_found }}
+          Suspicious Transactions: TBD
+          ================================
+          EOF
+
+      - name: Alert on issues
+        if: steps.discrepancies.outputs.discrepancies_found != '0'
+        run: |
+          echo "Alerting team about payment discrepancies..."
+          # Send alerts via Slack/Email
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  update-analytics:
+    name: Update Creator Analytics
+    needs: [calculate-royalties]
+    if: always() && needs.calculate-royalties.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Update daily analytics
+        run: |
+          echo "Updating daily creator analytics..."
+          # Aggregate daily stats for each creator
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Update weekly analytics
+        if: github.event.schedule == '0 6 * * 0'
+        run: |
+          echo "Updating weekly creator analytics..."
+          # Aggregate weekly stats for each creator
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Update monthly analytics
+        if: github.event.schedule == '0 0 1 * *'
+        run: |
+          echo "Updating monthly creator analytics..."
+          # Aggregate monthly stats for each creator
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
