@@ -359,7 +359,7 @@ export function connectLabelToInput(
 ): void {
   if (!input.id) {
     // Use crypto.randomUUID() for better collision resistance
-    input.id = `input-${typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)}`
+    input.id = `input-${typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).slice(2) + Date.now().toString(36))}`
   }
   label.setAttribute("for", input.id)
 }
