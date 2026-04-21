@@ -96,7 +96,7 @@ export async function findMatchingContent(
       duration,
       metadata,
       thumbnail_url,
-      users!content_creator_id_fkey(full_name, username)
+      users!inner(full_name, username)
     `)
     .eq("tenant_id", tenantId)
     .eq("status", "published")
