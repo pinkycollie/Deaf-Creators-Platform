@@ -342,7 +342,7 @@ export async function calculateRoyalties(
     .from("royalty_rules")
     .select("*")
     .eq("tenant_id", tenantId)
-    .or(`content_id.eq.${contentId},content_id.is.null`)
+    .in("content_id", [contentId, null])
     .eq("is_active", true)
     .order("priority", { ascending: false })
 
