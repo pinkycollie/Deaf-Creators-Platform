@@ -20,13 +20,11 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
-  AlertCircle,
   Download,
   CreditCard,
   Wallet,
   BarChart3,
   ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react"
 
 interface CreatorEarningsDashboardProps {
