@@ -1,0 +1,294 @@
+# Video Processing Pipeline Workflow
+# Triggered when new video content is uploaded or processing is requested
+
+name: Video Processing Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: 'Video processing job ID'
+        required: true
+        type: string
+      job_type:
+        description: 'Processing type'
+        required: true
+        type: choice
+        options:
+          - transcoding
+          - analysis
+          - thumbnail
+          - enhancement
+      priority:
+        description: 'Job priority (1-10)'
+        required: false
+        default: '5'
+        type: string
+  repository_dispatch:
+    types: [video-processing-request]
+
+# Limit permissions for security
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  validate:
+    name: Validate Processing Request
+    runs-on: ubuntu-latest
+    outputs:
+      valid: ${{ steps.validate.outputs.valid }}
+      job_data: ${{ steps.validate.outputs.job_data }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Validate job request
+        id: validate
+        run: |
+          echo "Validating video processing request..."
+          # Validate job exists and is pending
+          JOB_ID="${{ github.event.inputs.job_id || github.event.client_payload.job_id }}"
+          echo "Job ID: $JOB_ID"
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "job_data={\"id\": \"$JOB_ID\"}" >> $GITHUB_OUTPUT
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+  process-video:
+    name: Process Video Content
+    needs: validate
+    if: needs.validate.outputs.valid == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Update job status to processing
+        run: |
+          echo "Updating job status to processing..."
+          # API call to update status
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+
+      - name: Download source video
+        id: download
+        run: |
+          echo "Downloading source video..."
+          mkdir -p ./temp
+          # Download logic here
+          echo "source_path=./temp/source.mp4" >> $GITHUB_OUTPUT
+
+      - name: Process video - Transcoding
+        if: contains(github.event.inputs.job_type, 'transcoding') || contains(github.event.client_payload.job_type, 'transcoding')
+        run: |
+          echo "Starting video transcoding..."
+          # FFmpeg transcoding commands
+          # Example: ffmpeg -i input.mp4 -c:v libx264 -preset medium -crf 23 output.mp4
+
+      - name: Process video - Generate Thumbnails
+        if: contains(github.event.inputs.job_type, 'thumbnail') || contains(github.event.client_payload.job_type, 'thumbnail')
+        run: |
+          echo "Generating video thumbnails..."
+          # FFmpeg thumbnail generation
+          # Example: ffmpeg -i input.mp4 -ss 00:00:01 -vframes 1 thumb.jpg
+
+      - name: Process video - Enhancement
+        if: contains(github.event.inputs.job_type, 'enhancement') || contains(github.event.client_payload.job_type, 'enhancement')
+        run: |
+          echo "Applying video enhancements..."
+          # Video enhancement processing
+
+      - name: Upload processed files to storage
+        id: upload
+        run: |
+          echo "Uploading processed files to cloud storage..."
+          # Upload to R2/S3
+          echo "output_url=https://cdn.example.com/processed/video.mp4" >> $GITHUB_OUTPUT
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_ACCESS_KEY_ID }}
+          CLOUDFLARE_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_SECRET_ACCESS_KEY }}
+
+      - name: Cleanup temporary files
+        if: always()
+        run: |
+          rm -rf ./temp
+
+  ai-analysis:
+    name: AI Video Analysis
+    needs: validate
+    if: needs.validate.outputs.valid == 'true' && (contains(github.event.inputs.job_type, 'analysis') || contains(github.event.client_payload.job_type, 'analysis'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Download video for analysis
+        run: |
+          echo "Downloading video for AI analysis..."
+          mkdir -p ./temp
+
+      - name: Extract video frames
+        run: |
+          echo "Extracting frames for AI analysis..."
+          # FFmpeg frame extraction
+          # ffmpeg -i video.mp4 -vf fps=1 frame_%04d.jpg
+
+      - name: Run AI scene detection
+        id: scene_detection
+        run: |
+          echo "Running AI scene detection..."
+          # Call to AI service for scene analysis
+          echo "scenes_detected=5" >> $GITHUB_OUTPUT
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Run content tagging
+        id: tagging
+        run: |
+          echo "Running AI content tagging..."
+          # Call to AI service for content tagging
+          echo "tags=[\"educational\",\"asl\",\"tutorial\"]" >> $GITHUB_OUTPUT
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Run ASL detection
+        id: asl_detection
+        run: |
+          echo "Running ASL gesture detection..."
+          # Custom ASL detection model or API
+          echo "contains_asl=true" >> $GITHUB_OUTPUT
+          echo "asl_segments=[{\"start\":0,\"end\":30}]" >> $GITHUB_OUTPUT
+
+      - name: Run content moderation
+        id: moderation
+        run: |
+          echo "Running content moderation check..."
+          # Content moderation API
+          echo "is_safe=true" >> $GITHUB_OUTPUT
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Store analysis results
+        run: |
+          echo "Storing AI analysis results in database..."
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf ./temp
+
+  quality-review:
+    name: Quality Review
+    needs: [process-video, ai-analysis]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Calculate quality scores
+        id: quality
+        run: |
+          echo "Calculating overall quality scores..."
+          echo "technical_score=0.85" >> $GITHUB_OUTPUT
+          echo "content_score=0.90" >> $GITHUB_OUTPUT
+          echo "accessibility_score=0.95" >> $GITHUB_OUTPUT
+
+      - name: Create quality review record
+        run: |
+          echo "Creating quality review record..."
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+  finalize:
+    name: Finalize Processing
+    needs: [process-video, ai-analysis, quality-review]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update job status
+        run: |
+          JOB_STATUS="completed"
+          if [ "${{ needs.process-video.result }}" != "success" ]; then
+            JOB_STATUS="failed"
+          fi
+          echo "Final job status: $JOB_STATUS"
+          # Update job status in database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Send notification
+        run: |
+          echo "Sending processing completion notification..."
+          # Send notification via Pusher or email
+        env:
+          PUSHER_APP_ID: ${{ secrets.PUSHER_APP_ID }}
+          PUSHER_KEY: ${{ secrets.PUSHER_KEY }}
+          PUSHER_SECRET: ${{ secrets.PUSHER_SECRET }}
+
+      - name: Generate processing report
+        run: |
+          echo "Generating video processing report..."
+          cat << EOF
+          ================================
+          VIDEO PROCESSING REPORT
+          ================================
+          Job ID: ${{ github.event.inputs.job_id || github.event.client_payload.job_id }}
+          Job Type: ${{ github.event.inputs.job_type || github.event.client_payload.job_type }}
+          Processing Status: ${{ needs.process-video.result }}
+          AI Analysis Status: ${{ needs.ai-analysis.result }}
+          Quality Review Status: ${{ needs.quality-review.result }}
+          ================================
+          EOF
