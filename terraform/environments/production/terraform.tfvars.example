@@ -1,0 +1,78 @@
+# Production Deployment Configuration
+# Standard production setup with security enabled, no Zero Trust
+
+environment = "production"
+domain      = "creators.pinksync.io"
+git_repository = "pinkycollie/v0-deaf-creator-platform-multi-tenants"
+
+# AWS Configuration
+aws_region = "us-east-1"
+data_residency_region = "us-east-1"
+
+# Cloudflare Zero Trust Access (disabled for standard production)
+enable_zero_trust = false
+
+# Backend Configuration
+backend_type = "lambda"
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+# Database Configuration
+database_type = "neon"
+backup_retention_days = 30
+
+# Security Configuration
+enable_waf = true
+enable_ddos_protection = true
+enable_bot_management = true
+bot_fight_mode = "on"
+
+waf_rule_sets = [
+  "Cloudflare_Managed_Ruleset",
+  "Cloudflare_OWASP_Core_Ruleset"
+]
+
+waf_rate_limits = {
+  api_rate_limit = {
+    threshold   = 200
+    period      = 60
+    action      = "challenge"
+    description = "Rate limit for API endpoints"
+  }
+}
+
+firewall_rules = []
+
+# Compliance Configuration (none for standard production)
+compliance_standards = []
+log_retention_days = 30
+
+# Storage Configuration
+storage_lifecycle_rules = [
+  {
+    id              = "expire-temp-uploads"
+    enabled         = true
+    prefix          = "temp/"
+    expiration_days = 7
+  }
+]
+
+storage_cors_rules = [
+  {
+    allowed_origins = ["https://creators.pinksync.io"]
+    allowed_methods = ["GET", "PUT", "POST"]
+    allowed_headers = ["*"]
+    max_age_seconds = 3600
+  }
+]
+
+# Monitoring Configuration
+enable_cloudwatch = true
+enable_cloudflare_analytics = true
+alert_email = "alerts@pinksync.io"
+metrics_retention_days = 30
+
+# Frontend Environment Variables
+frontend_env_vars = {
+  NEXT_PUBLIC_APP_ENV = "production"
+}
