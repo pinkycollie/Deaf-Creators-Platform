@@ -16,8 +16,8 @@ This guide covers deploying the Deaf Creator Platform to production using Vercel
 
 | Environment | Branch | URL | Purpose |
 |-------------|--------|-----|---------|
-| Production | main | https://creators.pinksync.io | Live platform |
-| Staging | development | https://staging.creators.pinksync.io | Pre-production testing |
+| Production | main | https://creators.mbtq.dev | Live platform |
+| Staging | development | https://deafcreators.vercel.app | Pre-production testing |
 | Preview | PR branches | Dynamic URLs | Feature previews |
 
 ## Prerequisites
@@ -27,7 +27,7 @@ This guide covers deploying the Deaf Creator Platform to production using Vercel
 3. **PinkSync API Key**: Contact PinkSync team for API access
 4. **Stripe Account**: For payment processing
 5. **Cloudflare R2**: For video storage
-6. **Node.js 20+**: Required for local development and builds
+6. **Node.js 24+**: Required for local development and builds
 
 ## 🚀 Quick Start
 
